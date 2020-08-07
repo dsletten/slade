@@ -1,0 +1,31 @@
+(setf *category* "animal")
+(setf *determiner-flag* T)
+(setf *database* '("is it brown?"
+                   ("does it have wings?"
+                    ("does it swim?"
+                     ("does it eat soil?"
+                      ("is it red?"
+                       ("Does it have stripes?"
+                        ("Does it have a trunk?"
+                         ("does it have a long neck"
+                          ("is it an insect" ("Panda bear" NIL NIL)
+                           ("beetle" NIL NIL))
+                          ("giraffe" NIL NIL))
+                         ("elephant" NIL NIL))
+                        ("Is it a predator?" ("Zebra" NIL NIL)
+                         ("Tiger" NIL NIL)))
+                       ("Does it have a tail?" ("crab" NIL NIL)
+                        ("Fox" NIL NIL)))
+                      ("earthworm" NIL NIL))
+                     ("Does it eat surfers?" ("Eel" NIL NIL)
+                      ("shark" NIL NIL)))
+                    ("Is it a very large predator?"
+                     ("Is it pink?" ("Hawk" NIL NIL) ("Flamingo" NIL NIL))
+                     ("eagle" NIL NIL)))
+                   ("does it have pincers"
+                    ("Does it like honey?"
+                     ("does it slither"
+                      ("does it meow" ("Buffalo" NIL NIL) ("cat" NIL NIL))
+                      ("snake" NIL NIL))
+                     ("bear" NIL NIL))
+                    ("scorpion" NIL NIL))))

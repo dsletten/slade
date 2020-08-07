@@ -1,0 +1,272 @@
+Wikipedia
+https://en.wikipedia.org/wiki/Associative_array
+In computer science, an associative array, map, symbol table, or dictionary is an abstract data type composed of a collection of (key, value) pairs, such that each possible key appears at most once in the collection.
+
+Operations associated with this data type allow:
+
+the addition of a pair to the collection
+the removal of a pair from the collection
+the modification of an existing pair
+the lookup of a value associated with a particular key
+
+https://en.wikipedia.org/wiki/Association_list
+https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(associative_array)
+
+CLHS
+http://www.lispworks.com/documentation/HyperSpec/Body/14_aba.htm
+
+
+acons  assoc-if      pairlis  rassoc-if      
+assoc  assoc-if-not  rassoc   rassoc-if-not
+
+
+http://www.lispworks.com/documentation/HyperSpec/Body/f_get.htm
+ (get x y) ==  (getf (symbol-plist x) y)
+Numbers and characters are not recommended for use as indicators in portable code since get tests with eq rather than eql, and consequently the effect of using such indicators is implementation-dependent.
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+A dictionary or table data structure (aka map) is one of the most useful and flexible types of elementary data structures. It allows a program to establish a correspondence between a set of (generally) arbitrary keys and a set of values. In effect, it is a function implemented as data rather than through computation. The ordered pairs that compose the graph of the function are often referred to as "entries". Each consists of a key and a value, so entries are also known as key-value pairs. A conventional array can be viewed as a special case of a dictionary where the keys are simply restricted to non-negative integers.
+
+Of course, the graph of such a function would be much smaller than a computed function. One can easily imagine a limited table of logarithms in a book in comparison to a logarithm function that will compute a value for an arbitrary input. Furthermore, the function metaphor only goes so far considering that entries can be added, removed, or modified over time.
+
+Nonetheless, a dictionary can organize a limited set of key-value pairs of interest to a program. It allows for convenient retrieval and in many cases (depending on how it is implemented) also very efficient retrieval.
+
+Many programming languages have built-in support for a dictionary/table type of data structure. Of course, Common Lisp provides more than one choice. The choice of which implementation to use involves tradeoffs among competing concerns: efficiency (related to size of table), convenience of literal representation, flexibility in lookup, and whether or not updates should be made destructively or by shadowing.
+
+There are 3 fundamental versions, and one comes in two flavors, so we have 4 options to look at:
+1. Association lists (alists)
+   Linked-list-based dictionary of arbitrary keys/values. Elements of the list are key/value pair sublists. Built-in function support.
+2. General property lists (plists)
+   Another linked-list data structure but the elements of the list are the actual alternating keys and values. Built-in function support with slightly different semantics than alists. One distinction is that the keys should generally only be symbols themselves due to the manner of key lookup. A property list need not reside only on a symbol object (see 3.). A local property list can be created and manipulated without exposing to global scope.
+3. Symbol property lists (plists)
+   Every Common Lisp symbol is a substantial object. One of the values that each symbol carries is a property list as described in 2. above. Similar built-function support exists. However, symbol plists are global values (within scope of a package) and thus pose some risks of disruption by different parts of a program.
+4. Hashtables
+   Common Lisp has built-in hashtable functionality. This provides efficient update and retrieval for large numbers of key/value pairs. While it's true that Common Lisp does not provide a convenient literal syntax for hashtables as other languages such as Ruby do, this is somewhat of a spurious complaint. First of all, hashtables are really only preferable for large tables of many key/value pairs. An alist is reasonable for a smaller dictionary and has a perfectly reasonable literal syntax. Yet, a large hashtable would not likely be initialized by a literal value in source code. This would come from some other source. Furthermore, if absolutely necessary it is possible to define a reader macro to establish a syntax even more convenient than Ruby (Think Clojure maps.)
+
+There are four main operations possible with a dictionary/table:
+1. Add a new entry to the table
+2. Retrieve the value of a key with an entry in the table (or the entry itself)
+3. Update an entry associating a new value with an existing key.
+4. Remove an entry from the table. The given key no longer has a value associated with it.
+
+It's not surprising that these operations correlate to the fundamental actions on a table in a relational database: CRUD. Here is a comparison of the similar ideas from SQL, RESTful APIs and the Lisp table data types discussed below:
+
+
+Comparison among SQL/REST/Dictionaries
+
+CRUD operations
+(AKA Delete/Add/View/Edit or Create/Replicate/Append/Process)
+
+            SQL        REST          Alist                                       Plist                                                   Hash table
+Create   insert        POST        (acons ...)                                   (                                                       (setf (gethash ...) ...)
+Read     select        GET         (assoc ...)                                   (get ...) (getf ...)                                    (gethash ...)
+Update   update        PUT         (setf (assoc ...)...) Shadow (acons ...)      (setf (get ...)...) (setf (getf ...) ...)               (setf (gethash ...) ...)
+Delete   delete        DELETE      (remove ...)                                  (remprop ...) (remf ...)                                (remhash ...)
+
+
+Association lists
+
+CLHS 14.1.2.1 Lists as Association Lists
+An association list is a list of conses representing an association of keys with values, where the car of each cons is the key and the cdr is the value associated with that key.
+
+An association list (alist) in common usage is slightly more flexible than the CLHS orthodox description. It is a list of entries of the form (key . value) or perhaps (key value). In other words, each top-level element of the alist is either a CONS whose CAR is the key and whose CDR is the value or it is a two-element list whose FIRST is the key and whose SECOND is the value. This distinction may be blurred in the case where the value of the pair is itself a list. Thus, an entry relating Bob with a list of his children, namely his sole daughter  Mary may be represented as (bob . (mary)), which would normally be printed though as (bob mary). In this case, the CDR of the entry would be considered the value: (mary), rather than the SECOND: mary.
+
+Consider the following table:
++-+-+
+|a|1|
+|b|2|
+|c|3|
++-+-+
+
+An association list could encode this table either as:
+((A . 1) (B . 2) (C . 3))
+or
+((A 1) (B 2) (C 3))
+
+Of course, the order of the entries is irrelevant. This is an equivalent alist:
+((B . 2) (A . 1) (C . 3))
+(Naturally the entries themselves are ordered pairs though.)
+
+An association list can be initialized from a list of keys and a list of the corresponding values by using the PAIRLIS function:
+(pairlis '(a b c) '(1 2 3)) => ((C . 3) (B . 2) (A . 1))
+(Note that PAIRLIS always produces the first kind of alist: (key . value))
+[If you _really_ must: (pairlis '(a b c) (mapcar #'list '(1 2 3))) => ((C 3) (B 2) (A 1))]
+
+Or ACONS can be used to build an alist incrementally or add a new key/value pair: (Strictly speaking, create a new alist with the key/value pair present.)
+(acons 'c 3 (acons 'b 2 (acons 'a 1 '()))) => ((C . 3) (B . 2) (A . 1))
+(acons 'd 4 (pairlis '(a b c) '(1 2 3))) => ((D . 4) (C . 3) (B . 2) (A . 1))
+
+The value of a key is retrieved by means of ASSOC, which returns the entire entry when the key is present:
+(assoc 'a (pairlis '(a b c) '(1 2 3))) => (A . 1)
+The function CDR or SECOND would then be used to extract the value.
+
+CLHS illustrates the relationship with the function FIND (unless item is nil):
+(assoc item list :test fn) == (find item list :test fn :key #'car)
+
+
+There are two different ways to think about updating an entry (associating a new value with a given key). Because the lookup mechanism (ASSOC) proceeds from the head of the alist and stops as soon as it finds an entry with a matching key, we can shadow an entry with a new entry simply by adding it in front of the existing one:
+(acons 'a 99 (pairlis '(a b c) '(1 2 3))) => ((A . 99) (C . 3) (B . 2) (A . 1))
+(assoc 'a (acons 'a 99 (pairlis '(a b c) '(1 2 3)))) => (A . 99)
+This way of updating the alist allows a temporary change that can easily be restored in a different context. For example, a function may CONS new entries onto an alist while the calling context maintains a pointer to the old alist. It would be restored once the function returns. Shadowing stretches the function metaphor even further considering that there are multiple ordered pairs with the same key despite only one being visible at any time.
+
+(pushnew (cons k v) alist :key #'first) ; Possibly :test too
+(push (cons k v) alist :key #'first) ; Shadow
+
+In other cases we may be interested in a more permanent update. This can be accomplished by using SETF along with ASSOC. ASSOC locates the existing entry and SETF destructively modifies the CONS. We have to be careful to use the correct accessor for the type of alist entries:
+(defvar *a1* `((a 1) (b 2) (c 3)))
+(setf (second (assoc 'c *a1*)) 9) ; Not CDR!
+*a1* => ((A 1) (B 2) (C 9))
+(Alternatively: (nsubstitute '(b 12) 'b *a1* :key #'car)) ; The key is duplicated in this call, but we don't need to know the old value.
+
+(defvar *a2* (pairlis '(:a :b :c) '(pung foo bar)))
+(setf (cdr (assoc :c *a2*)) 'baz)
+*a2* => ((:C . BAZ) (:B . FOO) (:A . PUNG))
+
+(Alternatively: (nsubstitute '(:b . glom) :b *a2* :key #'car)) ; Same accessor for the key. Different stucture for the update...
+CLHS also mentions the use of older RPLACD for this purpose. (ASSOC entry)
+
+However, this approach only works when truly _updating_ an entry. The entry must already exist for the key (i.e., result of ASSOC is not NIL). The shadowing approach works whether or not the key already has an entry.
+
+An entry can be removed (or destructively DELETEd):
+(remove 'b *a1* :key #'car) => ((A 1) (C 9))
+(remove :a *a2* :key #'car) => ((:C . BAZ) (:B . GLOM))
+
+In addition to the accessor ASSOC, alists can be searched via ASSOC-IF and ASSOC-IF-NOT. All three functions support a :TEST keyword argument.
+
+Furthermore, an alist can be treated as an invertible function, associating values with keys. Entries can be looked up using the corresponding RASSOC/RASSOC-IF/RASSOC-IF-NOT functions. But despite the implication of a "reverse" association, the RASSOC functions still search from the head of the alist. Thus, the first entry whose value matches is returned:
+(rassoc 1 '((D . 1) (C . 1) (B . 2) (A . 1))) => (D . 1)
+
+This may produce unexpected results for a function that is not truly invertible.
+
+And as expected, the function needs to be adapted for the 2nd type of alist. Note that RASSOC is already examining the CDR, so the :KEY would be #'CAR in order to access the second element (CADR) of the CONS:
+(rassoc 1 '((d 1) (c 1) (b 2) (a 1)) :key #'car) => (D 1)
+
+CLHS says: (rassoc item list :test fn) and (find item list :test fn :key #'cdr) are equivalent in meaning, except when the item is nil nd nil appears in place of a pair in the alist.
+
+There is also a built-in function COPY-ALIST to copy the deeper structure of an alist (vs. COPY-LIST).
+
+
+
+
+Property lists
+
+A property list (plist) is like an alist without any nested structure. The key/value pairs are simply adjacent elements of the top-level plist structure: (k1 v1 k2 v2 k3 v3) rather than ((k1 v1) (k2 v2) (k3 v3)). Consequently the plist should contain an even number of elements, and there is no dotted list variant as with alists.
+
+In typical Lisp usage, a _property indicator_ and a _property value_ jointly establish a property. (Sometimes the word "property" simply refers to the _property value_.)
+
+There is no analogous PAIRLIS function to initialize a plist, but it's simple enough to write one:
+(defun make-plist (keys vals)
+  (loop for key in keys for val in vals collect key collect val))
+(make-plist '(a b c) '(1 2 3)) => (A 1 B 2 C 3)
+
+Evidently property lists typically have key/value pairs added as needed rather than initially holding an arbitrary set of keys.
+
+One important issue with property lists is that the built-in retrieval/update functions are hard-wired to use EQ as the test to locate keys. Not only does this preclude the use of strings as keys, it also makes the use of characters and numbers unreliable too. Consequently, plists normally only use symbols as keys.
+
+(defvar *plist* (list 'a 1 'b 2 'c 3))
+
+We can look up the value for a given key by means of the GETF function:
+(getf *plist* 'c) => 3
+(Notice that the order of the table and the key is the opposite of that used with ASSOC and alists!)
+
+GETF can also specify a default value to be returned if the key is not found:
+(getf *plist* 'd 99) => 99
+
+Just like ASSOC, GETF returns the value of the first matching key that it encounters, so it's possible to shadow a key:
+(setf *plist* (list* 'c 8 *plist*))
+(nconc (list 'c 9) *plist*)
+(getf *plist* 'c) => 8
+
+It is also possible to destructively update the value for the key using SETF on GETF:
+(setf (getf *plist* 'c) 4)
+(getf *plist* 'c) => 4
+
+Either of these same techniques will add a new entry to the plist:
+(setf *plist* (list* 'f 9 *plist*))
+(setf (getf *plist* 'e) -6)
+
+Consequently there is no discrepancy between adding and updating as with alists.
+
+An entire entry can be removed from the plist using REMF, which destructively modifies the property list:
+(remf *plist* 'b)
+
+*plist* => (C 8 A 1 C 4)
+
+
+GET-PROPERTIES
+
+
+Symbol property list
+
+The most common use of property lists may be the plists that are automatically associated with symbols. A symbol object is a complex structure that has multiple attributes ("cells") associated with it when it is instantiated. One of these is the symbol's property list, which is initially empty.
+
+Just like the general plists above, a symbol's property list is simply a list: (listp (symbol-plist 'symbol-plist)) => T
+And it can be abused, for example, storing an odd number of elements: (push 'foo (symbol-plist 'pung))
+
+However, the plist should normally hold an even number of elements as with general plists above.
+
+A symbol's plist could be accessed directly using the functions above: (getf (symbol-plist 'pung) 'foo)
+However, Common Lisp provides a second set of functions specifically for use with symbol plists.
+
+To retrieve a property:
+(get <SYMBOL> <INDICATOR>)
+
+GET also takes an optional default just as GETF does.
+
+CLHS says: (get x y) == (getf (symbol-plist x) y)
+
+To update a property:
+(setf (get <SYMBOL> <INDICATOR>) <NEW-VAL>) ; See CLHS note about default with SETF
+
+And a property can be removed by means of the function REMPROP:
+(remprop <SYMBOL> <INDICATOR>)
+
+If a property is being shadowed, REMPROP will only remove the first key/value pair from the plist. The function returns false if no matching property exists.
+
+CLHS says that: 
+(remprop x y) == (remf (symbol-plist x) y)
+
+The use of symbol property lists is perhaps a bit archaic. They used to play an important part in defining relationships among symbols in older (particularly pre-OO) Lisps. One particular concern is the global visibility of symbols (packages only afford limited protection). Consequently properties can be modified by any part of a program which may lead to collisions.
+
+With this in mind, CLHS cautions not to use SETF on its own to assign plist (rather than updating particular property) as assigning an entirely new property list could annihilate properties used by other code.
+
+Despite the fact that symbol property lists are structurally the same as general property lists, they are really different animals. A non-symbol plist is effectively just a different implementation of an alist. The interface is slightly different, and some of the features are missing (RASSOC, etc...). But just like an alist it is a standalone table backed by a linear data structure.
+
+On the other hand, a set of symbol plists establishes a sort of distributed table. Locating the table itself relies on looking up a symbol in a symbol table (package), and then the desired property is located in what is presumably a relatively short list of properties. This is evidently one of the reasons Lisp programmers turned to symbol plists in the early days. Rather than consolidating everything in a single alist which would be slow to access, rely on the relatively quick look-up in symbol tables and keep the plists short.
+
+In Common Lisp, however, hashtables provide a more efficient alternative. Moreover, the conceptual process of modeling objects by means of symbols with properties attached to them has been supplanted by object-oriented programming using CLOS. (Wilensky pg. 118 discusses archaic use of symbol plists in AI research.)
+
+Many authors emphasize a number of other downsides to symbol plists:
+    - They are global. Any part of a running program can attempt to store and rely on properties of certain symbols. If different program modules have different uses for a property or compete maintaining its state, collisions can occur. This problem can be mitigated by the use of separate packages.
+    - The distributed nature of the table reified by a group of symbol plists makes it hard to coordinate. For example, a property cannot be easily removed universally from all related plists.
+    - Properties are severely limited to the use of symbols as indicators (keys). Since the built-in plist functions all rely on EQ to locate indicators, many common types of keys are excluded such as strings, numbers
+
+Hash Tables
+
+The final option is the most heavyweight. Hash tables provide more efficient random access than the other linear structures particularly for a large number of key/value pairs. But they lack a built-in literal representation, so small dictionaries are more easily implemented with association lists or property lists.
+
+A hash table is created by means of the function MAKE-HASH-TABLE, which takes an optional :TEST argument specifiying which function will be used to compare keys: EQ, EQL, EQUAL, EQUALP. For example, a table using strings for keys would use EQUAL as the test whereas EQUALP could be used for case-insensitive string keys.
+
+Entries have to be deliberately added as there is no analogous PAIRLIS function. An entry is added by calling SETF with the accessor function GETHASH:
+(defvar *h* (make-hash-table :test #'equal))
+(setf (gethash "pung" *h*) pi)
+(setf (gethash "foo" *h*) 'bar)
+
+GETHASH retrieves the value associated with a key. The secondary value indicates whether or not the key is present versus whether it's value is NIL.
+(gethash "foo" *h*)
+BAR ;
+T
+(gethash "bar" *h*)
+NIL ;
+NIL
+
+There can only be one entry for a given key, so no shadowing takes place. In other words, updating is the same operation as creating an entry and is always destructive.
+
+A specific entry can be removed by the REMHASH function:
+(remhash "foo" *h*)
+
+And CLRHASH will remove all values.
+
+There are additional functions to determine how many keys exist in the hash table (HASH-TABLE-COUNT) as well as ways to iterate over the keys or values (MAPHASH, LOOP).
+

@@ -1,0 +1,12 @@
+
+"animal" 
+T 
+("Does it have a shell?" ("Does it have pincers?" "hermit crab" "turtle")
+ ("Does it have stripes?" ("Is it black and white?" "zebra" "tiger")
+  ("Does it have a trunk?" "elephant"
+   ("Does it bark?" "dog"
+    ("Does it like bananas?" "monkey"
+     ("Does it have whiskers?" ("Does it have tusks?" "walrus" "cat")
+      ("Does it have a large beak?"
+       ("Does it scoop up fish from the water?" "pelican" "toucan")
+       "snake"))))))) 

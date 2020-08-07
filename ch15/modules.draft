@@ -1,0 +1,211 @@
+asdf/ppcre examples!
+cfi (uffi)?
+
+Slade
+Packages organize symbols
+Modules are a way to organize packages - set of 1+ files composing 1+ packages
+A module may depend on definitions from another.
+
+A depends on B
+A REQUIRES B
+File(s) composing module B PROVIDE B
+
+Modules make dependencies among files explicit.
+PROVIDE/REQUIRE relationships illuminate global structure of large project.
+
+REQUIRE -> I need this module (so load it.)
+PROVIDE -> I am providing this module (so don't load it again.)
+
+Wilensky (302)
+Pg. 299 use packages to implement modules (subsystems of large programs):
+  -Associate with each module its own package
+  -When loading the module, ensure that all symbols in that module are placed in the module's package.
+  
+  Associated code constitutes module.
+
+Lamkins (333)
+Module system deprecated not even defined in CLHS glossary)
+-limited expressive power
+-suited for finished, stable systems
+-lacks functionality to support incremental dev (REQUIREd file, once loaded is never reloaded)
+-Alternative: DEFSYSTEM during dev -> deliver with DEFSYSTEM.
+
+
+
+
+
+Steele
+Module - Common Lisp subsystem
+       - loaded from 1+ files.
+       - Usually loaded as single unit regardless of how many files
+       - May consist of 1+ packages
+       - File-loading process implementation-dependent
+       
+CL simple (portable) machinery for naming modules (PROVIDE), keeping track of which modules have been loaded (*MODULES*), loading modules as a unit (REQUIRE)
+
+Entire module facility eliminated from language!
+ - File-loading feature of REQUIRE not portable
+ - Remaining functionality easily implemented by user code.
+
+Each module has unique (string) name.
+If module consists of a single package customary for the package and module names to be the same.
+
+PROVIDE - adds new module name to list of modules in *modules* => module in question has been loaded.
+REQUIRE - tests whether a modul is already present. If not, loads the appropriate file(s). Pathname args loadd in order. If NIL, system-dependent attempt to determine which files to load. (central registry of modules)
+
+/////////// Old example (no DEFPACKAGE)
+
+;;;
+;;;    Initialization file
+;;;
+(require 'calculus)
+(use-package 'calculus)
+(require 'newtonian-mechanics)
+(use-package 'newtonian-mechanics)
+(require 'relativity)
+(import '(relativity:speed-of-light relativity:ignore-small-errors))
+(require 'phlogiston)
+(require 'alchemy)
+
+When each of two files uses some symbols from the other, must take care to arrange contents in proper order. Typically each file contains single package that is complete module.
+Contents should include the following in order:
+1. PROVIDE - announces module name
+2. IN-PACKAGE - establishes the package ............
+3. SHADOW - establishes local symbols that will shadow symbols that would otherwise be inherited from packages that this package will use.
+4. EXPORT - establishes external symbols of this package.
+5. REQUIRE - any number, to load other modules that current file might need. Because of order (after IN-PACKAGE, SHADOW, EXPORT), other packages to be loaded at this point may refer to external symbols of this package.
+6. USE-PACKAGE - any number, make external symbols from other packages _accessible_ in this package.
+7. IMPORT - any number, make symbols from other packages _present_ in this package.
+8. Definitions composing contents of this package/module.
+
+Mnemonic: Put IN Seven EXtremely Random USEr Interface COmmands!!
+
+Suppose ALCHEMY and PHLOGISTON modules are interdependent (single-file/single-package modules):
+(provide 'alchemy)
+(in-package 'alchemy)
+;Nothing to SHADOW
+(export '(lead-to-gold gold-to-lead antimony-to-zinc elixir-of-life))
+(require 'phlogiston)
+;Plan to mostly use qualified symbols. No USE-PACKAGE 
+(import '(phlogiston:make-fire-bottle))
+
+; Contents:
+(defun lead-to-gold (x)
+  (when (> (phlogiston:heat-flow 5 x x) 3)
+    (make-fire-bottle x))
+  (gild x))
+...
+
+//////////
+
+(provide 'phlogiston)
+(in-package 'phlogiston)
+;Nothing to SHADOW
+(export '(heat-flow cold-flow mix-fluids separate-fluids burn make-fire-bottle))
+(require 'alchemy)
+(use-package 'alchemy)
+;No IMPORTs
+
+;Contents:
+(defvar *feeling-weak* nil)
+
+(defun heat-flow (amount x y)
+  (when *feeling-weak*
+    (quaff (elixir-of-life)))
+  (push-heat amount x y))
+...
+
+User may REQUIRE either module in either order and correct behavior will result.
+
+For very large modules--contents spread over several files--user should create the package and declare all shadows/external symbols in separate file.
+This file can then be loaded prior to anything that might use symbols from the package.
+
+DEFPACKAGE encourages the use of such a separate file.
+
+//////////New example (DEFPACKAGE)
+
+;;;
+;;;    Initialization file
+;;;    No REQUIREs -- LOAD instead
+;;;
+(load "calculus")
+(use-package 'calculus)
+
+(load "newtonian-mechanics")
+(use-package 'newtonian-mechanics)
+
+(load "relativity")
+(import '(relativity:speed-of-light relativity:ignore-small-errors))
+
+(load "phlogiston")
+(load "alchemy")
+
+
+///////alchemy and phlogiston are mutually dependent. DEFPACKAGE alone cannot establish necessary relationships.
+;;;
+;;;    Alchemy package definition
+;;;    File: alchemy-package
+;;;
+(cl:defpackage "ALCHEMY"
+  (:use "COMMON-LISP") ; Missing!
+  (:export "LEAD-TO-GOLD" "GOLD-TO-LEAD" "ANTIMONY-TO-ZINC" "ELIXIR-OF-LIFE"))
+
+(cl:unless (cl:find-package "PHLOGISTON") ; <-------------- Follows DEFPACKAGE!!
+  (cl:load "phlogiston-package"))
+
+;;;  Can't put PHLOGISTON package in DEFPACKAGE :USE above. It must be loaded first. If necessary do USE-PACKAGE here:
+;(use-package 'phlogiston)
+(cl:import '(phlogiston:make-fire-bottle))
+
+;;;
+;;;    The real contents of the module
+;;;    File: alchemy
+;;;
+
+(unless (find-package "ALCHEMY")
+  (load "alchemy-package"))
+
+(in-package 'alchemy)
+
+(defun lead-to-gold ...)
+
+;;;
+;;;    File: phlogiston-package
+;;;
+(cl:unless (cl:find-package "ALCHEMY")  ; <----------------- Precedes DEFPACKAGE!!
+  (cl:load "alchemy-package"))
+
+(cl:defpackage "PHLOGISTON"
+  (:use "COMMON-LISP" "ALCHEMY") ; Alchemy package breaks circular dependency. Simply :USE it here. 
+  (:export "HEAT-FLOW" "COLD-FLOW" "MIX-FLUIDS" "SEPARATE-FLUIDS" "BURN" "MAKE-FIRE-BOTTLE"))
+
+;;;
+;;;    File: phlogiston
+;;;
+(unless (find-package "PHLOGISTON")
+  (load "phlogiston-package"))
+
+(in-package 'phlogiston)
+
+(defvar *feeling-weak* nil)
+
+(defun heat-flow ...)
+
+
+The package definition files are written so that when they are loaded even if current package doesn't use COMMON-LISP they will still work properly.
+
+Loading scenarios:
+1. Load alchemy-package first.
+   - Establishes alchemy package
+   - Loads phlogiston-package
+     - Sees that alchemy package already defined. Does not reload alchemy-package.
+     - Establishes phlogiston package
+   - phlogiston package already created, so MAKE-FIRE-BOTTLE is imported.
+2. Load phlogiston-package first.
+   - alchemy package not defined yet. Load alchemy-package
+     - Defines alchemy package
+     - Determines that phlogiston package is not defined. Load phlogiston-package again!
+       - Define phlogiston package and terminate.
+     - Import MAKE-FIRE-BOTTLE
+     - Terminate
+   - Redefine phlogiston package! But identical definition. (CLHS says: If defined-package-name already refers to an existing package, the name-to-package mapping for that name is not changed. If the new definition is at variance with the current state of that package, the consequences are undefined; an implementation might choose to modify the existing package to reflect the new definition.)

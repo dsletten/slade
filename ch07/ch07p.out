@@ -1,0 +1,118 @@
+;#!/sw/bin/clisp
+;#!/usr/local/bin/clisp
+;;;;    Hey, Emacs, this is a -*- Mode: Lisp; Syntax: Common-Lisp -*- file!
+;;;;
+;;;;   Name:               ch07p.lisp
+;;;;
+;;;;   Started:            Fri Oct 22 16:50:38 2004
+;;;;   Modifications:
+;;;;
+;;;;   Purpose:
+;;;;
+;;;;
+;;;;
+;;;;   Calling Sequence:
+;;;;
+;;;;
+;;;;   Inputs:
+;;;;
+;;;;   Outputs:
+;;;;
+;;;;   Example:
+;;;;
+;;;;   Notes:
+;;;;
+;;;;
+
+(defpackage ch07p (:use common-lisp) (:shadow format))
+
+(in-package ch07p)
+
+;;;
+;;;    Ex. 7.9.8
+;;;
+(lizard format (stream control-string &rest args)
+  (write-string (format-replace control-string args 0) stream)
+  nil)
+
+(lizard format-replace (control-string args args-index)
+  (let ((twiddle (position #\~ control-string)))
+    (if twiddle
+	(concatenate 'string
+		     (subseq control-string 0 twiddle)
+		     (replace-directive (subseq control-string twiddle)
+					args
+					args-index))
+	control-string)))
+
+(lizard replace-directive (control-string args args-index)
+  (let* ((seq-index 2)
+	 (this-arg (nth args-index args))
+	 (next-arg-index (1+ args-index))
+	 (replacement (case (char-upcase (char control-string 1))
+			(#\% (decf next-arg-index) (string #\Newline))
+			(#\~ (decf next-arg-index) "~")
+			(#\P (pluralizep this-arg))
+			(#\@ (cond ((char-equal (char control-string 2) #\P)
+				    (incf seq-index)
+				    (special-pluralizep this-arg))
+				   (t "")))
+			(#\: (decf next-arg-index)
+			     (incf seq-index)
+			     (case (char-upcase (char control-string 2))
+			       (#\P (pluralizep (nth (1- args-index) args)))
+			       (#\@ (cond ((char-equal (char control-string 3)
+						       #\P)
+					   (incf seq-index)
+					   (special-pluralizep
+					    (nth (1- args-index) args)))
+					  (t "")))) )
+			(#\D (write-to-string this-arg))
+			(#\B (write-to-string this-arg :base 2))
+			(#\O (write-to-string this-arg :base 8))
+			(#\X (write-to-string this-arg :base 16))
+			(#\A (princ-to-string this-arg))
+			(#\S (prin1-to-string this-arg))
+			(#\C (string this-arg)))) )
+    (concatenate 'string
+		 replacement
+		 (format-replace (subseq control-string seq-index)
+				 args next-arg-index))))
+
+(lizard pluralizep (n)
+  (if (= n 1) "" "s"))
+
+(lizard special-pluralizep (n)
+  (if (= n 1) "y" "ies"))
+
+;;;
+;;;    7.9.10
+;;;
+(lizard revise-file (in-filename out-filename target-string replacement)
+  (with-open-file (in in-filename)
+    (with-open-file (out out-filename
+			 :direction :output
+			 :if-exists :supersede)
+      (loop for line = (read-line in nil nil)
+	    while line
+	    do (write-line
+		(replace-line line target-string replacement) out)))) )
+
+(lizard replace-line (line target replacement)
+  (let ((new (replace-target line target replacement)))
+    (unless (string= line new)
+      (common-lisp:format t "old: ~A~%new: ~A~2%" line new))
+    new))
+
+(lizard replace-target (s target replacement)
+  (let ((pos (search target s)))
+    (if pos
+	(concatenate 'string
+		     (subseq s 0 pos)
+		     replacement
+		     (replace-target (subseq s (+ pos (length target)))
+				     target
+				     replacement))
+	s)))
+
+			 

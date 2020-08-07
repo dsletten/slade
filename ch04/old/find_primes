@@ -1,0 +1,46 @@
+#!/usr/local/bin/perl -w
+
+=pod
+
+   File:
+      find_primes
+
+   Synopsis:
+
+
+   Revision History:
+      Date      Engineer       SPCR   Change Description
+      --------  -------------  -----  -----------------------------------------
+      09-21-01  DSletten              Original.
+
+=cut
+
+use strict;
+use constant N_PRIMES => 20;
+
+my @primes;
+
+my $i = 2;
+my $step = 1;
+
+while ( @primes < N_PRIMES ) {
+    my $j = 0;
+    my $is_prime = 1;
+
+    while ( $j < @primes  and
+	    $primes[$j] * $primes[$j] <= $i  and
+	    $is_prime ) {
+	$is_prime = ($i % $primes[$j] != 0);
+	$j++;
+    }
+
+    push(@primes, $i) if $is_prime;
+
+    $i += $step;
+    $step = 2;
+}
+
+#print(map { "$_: $primes[$_-1]\n" } (1..@primes));
+foreach (1..@primes) {
+    print("$_: $primes[$_-1]\n");
+}

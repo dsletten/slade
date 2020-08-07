@@ -1,0 +1,224 @@
+;#!/usr/local/bin/sbcl --script
+
+;;;;   Hey, Emacs, this is a -*- Mode: Lisp; Syntax: Common-Lisp -*- file!
+;;;;
+;;;;   Of all the languages I know, I like Lisp the best, simply because it's the most beautiful.
+;;;;   -- Paul Graham
+;;;;
+;;;;   Name:               guess.lisp
+;;;;
+;;;;   Started:            Tue Nov 29 22:33:22 2011
+;;;;   Modifications:
+;;;;
+;;;;   Purpose:
+;;;;
+;;;;
+;;;;
+;;;;   Calling Sequence:
+;;;;
+;;;;
+;;;;   Inputs:
+;;;;
+;;;;   Outputs:
+;;;;
+;;;;   Example:
+;;;;
+;;;;   Notes:
+;;;;
+;;;;
+(load "/Users/dsletten/lisp/packages/test.lisp")
+
+(defpackage :guess (:use :common-lisp :test))
+
+(in-package :guess)
+
+(defvar *category*)
+(defvar *binary-tree*)
+(defvar *determiner-flag*)
+
+(defun binary-init (item category flag)
+  (setf *category* category
+        *determiner-flag* flag
+        (get '*binary-tree* 'answer) item
+        (get '*binary-tree* 'question) nil
+        (get '*binary-tree* 'yes) nil
+        (get '*binary-tree* 'no) nil))
+
+(defun binary ()
+  (catch 'quit
+    (let ((back-up-flag nil))
+        (start back-up-flag))))
+
+(defun start (back-up-flag)
+  (format t "~%Think of ~A ~A." (sub-determ *category*) *category*)
+  (format t "~%Have you got one yet? ")
+  (query #'(lambda () (process-node '*binary-tree* back-up-flag))
+         #'(lambda () (start back-up-flag))
+         #'(lambda () (start back-up-flag))))
+
+(defun process-node (tree-node back-up-flag)
+  (cond ((get tree-node 'question) (process-question (get tree-node 'question) tree-node back-up-flag))
+        ((get tree-node 'answer) (process-answer (get tree-node 'answer) tree-node back-up-flag))
+        (t 'error-in-process-node)))
+
+(defun process-question (q node back-up-flag)
+  (format t "~%~A " q)
+  (query #'(lambda () (process-node (get node 'yes) back-up-flag))
+         #'(lambda () (process-node (get node 'no) back-up-flag))
+         #'(lambda () (process-question q node back-up-flag))))
+
+(defun process-answer (a node back-up-flag)
+  (format t "~%Are you thinking of ~A~:[ ~;~]~S? " (determiner a) (null *determiner-flag*) a)
+  (query #'(lambda () (format t "~%Hot tomatoes! I guessed it!~%") (play-again-p #'start back-up-flag))
+         #'(lambda () (add-item node a) (play-again-p #'start t))
+         #'(lambda () (process-answer a node back-up-flag))))
+
+(defun determiner (word)
+  (if (null *determiner-flag*)
+      ""
+      (sub-determ word)))
+
+(defun sub-determ (word)
+  (if (stringp word)
+      (case (char-downcase (char word 0))
+        ((#\a #\e #\i #\o #\u #\y) "an")
+        (otherwise "a"))
+      (sub-determ (string word))))
+
+(defun query (yes-action no-action else-action)
+  (case (read)
+    ((y yes t) (funcall yes-action))
+    ((n no nil) (funcall no-action))
+    ((q quit) (throw 'quit 'game-over))
+    (otherwise (format t "~&Type Yes, No, or Quit.~%")
+               (funcall else-action))))
+
+(defun add-item (old-node old-item)
+  (let ((yes-node (gensym "NODE"))
+        (no-node (gensym "NODE"))
+        new-item 
+        new-question)
+    (format t "~%What ~A were you thinking of? " *category*)
+    (setf new-item (read))
+    (format t "~%Type a yes/no question that can distinguish~%between ~A~:[ ~;~]~S and ~A~:[ ~;~]~S.~%=> "
+            (determiner old-item) (null *determiner-flag*) old-item
+            (determiner new-item) (null *determiner-flag*) new-item)
+    (clear-input)
+    (setf new-question (read-line))
+    (set-up-old-node old-node new-question yes-node no-node)
+;;    (setf back-up-flag t) ;;???!?!
+    (format t "~%And how would you answer that question for ~A~:[ ~;~]~S? "
+            (determiner new-item) (null *determiner-flag*) new-item)
+    (get-new-answer yes-node no-node new-item old-item)))
+
+(defun get-new-answer (yes-node no-node new-item old-item)
+  (query #'(lambda ()
+             (set-up-new-node yes-node new-item)
+             (set-up-new-node no-node old-item))
+         #'(lambda ()
+             (set-up-new-node no-node new-item)
+             (set-up-new-node yes-node old-item))
+         #'(lambda () (get-new-answer yes-node no-node new-item old-item))))
+
+(defun set-up-old-node (old-node new-question yes-node no-node)
+  (setf (get old-node 'question) new-question
+        (get old-node 'answer) nil
+        (get old-node 'yes) yes-node
+        (get old-node 'no) no-node))
+
+(defun set-up-new-node (node item)
+  (setf (get node 'answer) item))
+
+(defun play-again-p (replay back-up-flag)
+  (format t "~%Do you want to play again? ")
+  (query #'(lambda () (funcall replay back-up-flag))
+         #'(lambda ()
+             (save-data-p back-up-flag)
+             (format t "~%So long, ~A lover.~2%" *category*))
+         #'play-again-p))
+
+(defun save-data-p (back-up-flag)
+  (cond ((null back-up-flag) nil)
+        (t (format t "~%Do you wish to save the current ~A database? " *category*)
+           (query #'back-up-data
+                  #'(lambda () nil)
+                  #'save-data-p))))
+
+(defun back-up-data ()
+  (let ((file (make-pathname :name "binary" :type *category*)))
+    (catch 'exists
+      (when (probe-file file)
+        (warn "Warning! The file '~A' already exists.~%" (file-namestring file))
+        (unless (y-or-n-p "Do you wish to replace it? ")
+          (warn "Program aborting. No files modified.~%")
+          (throw 'exists nil)))
+      (with-open-file (stream file
+                              :direction :output
+                              :if-exists :supersede)
+        (format t "Backing up data to file: ~A~%" (file-namestring file))
+        (format stream "(setf *category* ~S)~%" *category*)
+        (format stream "(setf *determiner-flag* ~A)~%" *determiner-flag*)
+        (back-up-node '*binary-tree* stream))
+      (format t "~%Backup complete.")
+      (format t "~%To restore data, type (load ~S)~%" (file-namestring file)))) )
+
+;;;
+;;;    Nodes are originally represented by uninterned symbols. These are serialized
+;;;    as regular symbols and will be interned when reloaded.
+;;;    
+(defun back-up-node (node stream)
+  (let ((question (get node 'question))
+        (answer (get node 'answer)))
+;;    (cond ((and (null question) (null answer)) nil)
+    (cond (question
+           (format stream "(setf (get '~A 'question) ~S)~%" node question)
+           (let ((yes-node (get node 'yes))
+                 (no-node (get node 'no)))
+             (format stream "(setf (get '~A 'yes) '~A)~%" node yes-node)
+             (back-up-node yes-node stream)
+             (format stream "(setf (get '~A 'no) '~A)~%" node no-node)
+                      (back-up-node no-node stream)))
+          (answer (format stream "(setf (get '~A 'answer) '~A)~%" node answer))
+          (t nil))))
+
+(defclass game ()
+  ())
+
+(defclass node ()
+  ((question :accessor question :initarg :question :initform nil)
+   (answer :accessor answer :initarg :answer :initform nil) 
+   (yes :accessor yes :initarg :yes :initform nil)
+   (no :accessor no :initarg :no :initform nil)))
+
+(defclass question ()
+  ((text :reader text :initarg :text :type string)
+   (yes :accessor yes :initarg :yes :type (or question answer))
+   (no :accessor no :initarg :no :type (or question answer))))
+
+(defclass answer ()
+  ((value :reader value :initarg :value :initform "" :type string)))
+
+;; (deftype bst ()
+;;   '(or node null))
+
+(defgeneric emptyp (bst)
+  (:documentation "Is this BST empty?"))
+(defgeneric tree->list-1 (bst)
+  (:documentation "Convert a BST to an ordered list of elements."))
+(defgeneric tree->list-2 (bst)
+  (:documentation "Convert a BST to an ordered list of elements."))
+
+(defmethod emptyp ((bst node)) nil)
+(defmethod emptyp ((bst null)) t)
+
+(defmethod print-object ((n node) stream)
+  (print-unreadable-object (n stream :type t)
+    (format stream "~S ~S" (question n) (answer n))))
+
+(defmethod print-object ((q question) stream)
+  (print-unreadable-object (q stream :type t)
+    (format stream "~S" (text q))))
+
+(defmethod print-object ((a answer) stream)
+  (print-unreadable-object (a stream :type t)
+    (format stream "~S" (value a))))

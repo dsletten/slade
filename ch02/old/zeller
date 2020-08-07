@@ -1,0 +1,57 @@
+#!/sw/bin/clisp
+;#!/usr/local/bin/clisp
+
+;;
+;   NAME:               zeller
+;
+;   STARTED:            010719
+;   MODIFICATIONS:
+;   030701 Single command-line arg assumed to be 6-digit date: YYMMDD
+;
+;   PURPOSE: Determine day of week given command-line args DAY MONTH YEAR
+;      (All numeric). Uses King's Zeller algorithm.
+;
+;   CALLING SEQUENCE:
+;   E.g., 16 July 1999
+;   zeller 16 7 1999
+;   or
+;   zeller 990716
+;
+;   NOTES: May malfunction due to Y2K ambiguity. E.g., 250303-> 1925? 2025?
+;
+;;
+(defconstant days-of-week '("Saturday" "Sunday" "Monday" "Tuesday" 
+			    "Wednesday" "Thursday" "Friday" "Saturday"))
+
+(defun zeller (month day year)
+  (let* ((q day)
+	 (m (+ month (* 12 (+ (- 1 (truncate month 3))
+			      (truncate month 6)
+			      (truncate month 9)))) )
+	 (K (mod (- year (truncate m 13)) 100))
+	 (J (truncate (- year (truncate m 13)) 100))
+	 (h (mod (+ q
+		    (truncate (* 26 (+ m 1)) 10)
+		    K
+		    (truncate K 4)
+		    (truncate J 4)
+		    (* 5 J)) 7)))
+    (setf h (+ h (* 7 (truncate (- 6 h) 6))))
+    (format t "~A~%" (nth h days-of-week))) )
+
+;;;
+;;;    Resolution of ambiguous 2-digit year is completely arbitrary!
+;;;    Anything less than 50 => 21st Century.
+;;;    
+(if (= (length *args*) 1)
+    (let* ((date (first *args*))
+	   (month (read-from-string (subseq date 2 4)))
+	   (day (read-from-string (subseq date 4 6)))
+	   (year (read-from-string (subseq date 0 2))))
+      (zeller month day (if (< year 50) (+ year 2000) (+ year 1900))))
+    (zeller (read-from-string (second *args*))
+	    (read-from-string (first *args*))
+	    (read-from-string (third *args*))))
+
+
+

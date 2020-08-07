@@ -1,0 +1,98 @@
+-Consistency between reading symbol/later access
+Wilensky 17.2
+  Distinguish between new symbols and existing ones
+    Name refers to previously encountered symbol -> retrieve it to build form
+    Symbol is new -> create representation for it
+
+-Representation of symbols
+Wilensky 17.3
+  Symbol table maintains association between symbol names w/ internal representation
+
+-Package
+Wilensky 17.4
+  Data structure that serves as symbol table
+    Interface between names typed by user, internal representations stored by system
+  Current package *package*
+  READ encounters symbol name -> check in current package for existing symbol
+    If one accessible, use it. Otherwise make symbol, add to current pkg.
+                                 Subsequent reference -> same representation.
+
+-Programmer working w/ team, modular code
+Wilensky 17.4
+Seibel 263 avoid name conflicts between independently developed pieces of code
+  Learn names in Common Lisp - don't want to have to learn everything about 3rd party library vs. public API
+  Control how reader translates names -> symbols (consistency above)
+
+-READ access to symbol table
+Seibel 264
+  FIND-SYMBOL
+  INTERN (READ uses INTERN to make symbols) (consistency above)
+
+-Create new symbols
+Wilensky 17.5.1
+  MAKE-SYMBOL different invocations -> different symbols
+  INTERN
+  #:FOO
+
+-Automatic symbol generation
+Wilensky 17.5.2
+  GENSYM
+  GENTEMP
+
+-Remove existing ones
+Wilensky 17.5.3
+  UNINTERN - no way to re-enter symbol into package -> new symbol
+    Symbol removed from shadowing list (Seibel 266)
+    vs. apparently uninterned (SYMBOL-PACKAGE entry)
+
+-Package implements module
+Wilensky 17.6
+  Internal functions vs. External interface
+  Module in own pkg
+  
+-Pkg structure
+Wilensky 17.6.1
+  Pkg "owns" symbols interned in it
+     Pkg is "home pkg" for those symbols
+
+  Pkg references symbols owned by other pkg -> external symbols EXPORT
+    foo:bar "qualified symbol reference" (Seibel 264 "pkg-qualified name")
+    Symbols not declared external -> internal
+    For convenience, import (external) symbols IMPORT, no pkg qualifier
+    Inherit all external symbols USE-PACKAGE
+
+-Standard CL packages
+  CL, CL-USER, KEYWORD nickname ""
+  Can't intern new symbols in CL (Seibel 267)
+  
+-Modules
+Wilensky 17.6.3
+  *modules*
+  provide
+  require
+
+-Package jargon
+Seibel 265
+  accessible (FIND-SYMBOL)
+  present Pkg symbol table contains entry for symbol
+    intern
+    home package
+  inherit (use external symbols) -> internal symbols
+  shadowing symbol
+  import -> present (symbol can be present in >1 pkgs)
+  Only "present" symbols -> export/shadow
+
+-Creating packages
+Seibel 267
+  (MAKE-PACKAGE)
+  DEFPACKAGE
+    Representation of package name (string): pkg designator: string, char, symbol
+      Symbol vs. string -> don't worry about uppercase
+      Keyword vs. arbitrary symbol -> symbol interned (as junk) in current pkg when DEFPACKAGE form read in.
+    Email library example
+    
+Packaging mechanics
+Seibel 272
+
+Package gotchas
+Seibel 273

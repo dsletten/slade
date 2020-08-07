@@ -1,0 +1,66 @@
+070707
+Converting a roman numeral to arabic is simple. The tricky part involves weeding out invalid roman numerals.
+As is often the case, the choice of representation for the problem has a big impact on the ease of its solution.
+Slade suggests a mechanism which treats each roman digit individually merely accounting for the subtraction of the
+value of a smaller symbol to the left of a symbol with a larger value. Unfortunately this approach accepts many
+invalid roman numerals as input. Furthermore, the effort required to fix the problem is substantial.
+
+A better method approaches the input in terms of both simple and compound units as we see below:
+The 1 4 5 9 rule of roman numerals.
+There are symbols representing various powers of 10:
+(Why are these fundamental in a non-positional notation?)
+1    I
+10   X
+100  C
+1000 M
+There are also symbols at the halfway points between these values:
+5    V
+50   L
+500  D
+Each of these symbols (besides I) can be combined with a smaller symbol on the left to produce a lesser value:
+9    IX
+90   XC
+900  CM
+4    IV
+40   XL
+400  CD
+Thus, we have 13 different fundamental units from which all of the numbers between 1-3999 can be formed:
+M
+C M
+D
+C D
+C
+X C
+L
+X L
+X
+I X
+V
+I V
+I
+
+The symbols must be used in the order above. Each of the power-of-ten symbols may be repeated up to 3 times.
+All other symbols may only occur once and may not be followed by the next largest unit.
+The following violate one or more of these restrictions:
+CMD (should be MCD)
+XCL (should be CXL)
+IXV (should be XIV)
+XXXX (should be XL)
+CDC (just D)
+LL (C)
+CDCD (should be DCCC)
+
+We can now compare a list of digits in a candidate roman numeral to a list of the above symbols (in order).
+We must also observe the number of times a unit occurs as well as whether or not it may be followed by the
+next largest unit. However, these are minor modifications compared to what is necessary to fix Slade's method.
+
+Transformations in the other direction are trivial. In fact, converting arabic numbers to roman numerals is so
+simple that it's even conceivable to use this transformation to define the roman to arabic mapping. This is
+all the more reasonable considering that roman numerals are only defined up to 3999 (using these symbols),
+so a hash table from roman numerals to arabic is not excessive. We assume that the system will validate our
+arabic integer input, and we wind up with the canonical roman numeral representation. This avoids all of the
+headaches above.
+
+We simply subtract the largest remaining value in the list (ordered once again) from our arabic number and collect
+the corresponding roman digit(s). When our input is reduced to zero we have the correct list of roman digits for
+its representation.

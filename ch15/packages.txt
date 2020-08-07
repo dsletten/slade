@@ -1,0 +1,372 @@
+The Lisp reader translates strings of characters (S-expressions) into Lisp objects (forms) which are typically
+then handed to EVAL for evaluation. Symbols are one of the key data types that the reader processes. When the
+reader encounters a string that represents the name of a symbol, we want to make sure that it associates that
+name with the right symbol. In some cases we want a name to be associated with a symbol that is the same as a
+previous reference. In other cases we want the name to be associated with a different symbol despite having the
+same textual representation. 
+
+This issue immediately arises when we start working with a team of programmers who must coordinate their use of
+mutually desired names in order to prevent conflicts. And as Shapiro points out, as soon as you start using Lisp
+you are already working with a team, namely the team who implemented Lisp.
+
+Packages are a way to control the association between names and symbols as a means of organizing code and preventing
+name conflicts. Tatar (185) likens a package name to a surname that allows several people to share the same given name.
+We can distinguish them as their family names serve to disambiguate them. In a similar way, symbols with the same name
+can coexist in different packages without causing confusion.
+
+Packages also allow programs to provide an external interface to users while hiding internal names which are irrelevant
+to them. This also removes the burden of having to be aware of those internal names in order to avoid using them
+in one's own code. The programmer has had to learn all of the names significant to the Common Lisp language (978 of
+them!). He doesn't want to have to worry about all of the names in every library he uses too. Packages can be used to
+implement separate, independent (or dependent in a manageable way) modules within a large program.
+
+Seibel (267) emphasizes that packages provide some control over access to symbols by affecting how the reader converts
+textual names into symbol objects, however, this does not extend to control over access to functions and variables
+named by such symbols. If a name is able to be accessed, then anything designated by that name is also accessible.
+Furthermore, it is only during evaluation (after reading has taken place) that the system determines what a given symbol
+denotes. Consequently, it doesn't make sense to speak of exporting a function or variable from a package. The package
+system controls (incompletely) what names you can refer to not what you can do with those names.
+
+The CLHS defines a package to be a namespace that maps symbol names to symbols, while Wilensky (292) describes packages
+as symbol-table-like objects. (On the other hand, Kessler (450) states that packages use hashtables to collectively
+reference a single symbol table.) Wilensky (294) goes on to characterize a package as "an interface between the print
+names typed by the user and the internal representations of symbols stored by Lisp". A symbol is more than just a name,
+and the package maintains the association between a name and the symbol object that it names.
+
+There is one package that is active at any moment. This is known as the current package, and it is accessible via the
+special variable *PACKAGE*:
+
+*PACKAGE*
+
+When READ encounters a symbol name, it checks in the current package to see if such a symbol already exists. If so, it
+uses a reference to that symbol in the form that it is building. If there is no symbol with that name in the package
+yet, READ causes the symbol to be created and added to the current package. Subsequent references to that name will
+refer to the new symbol.
+
+[[Illustration Wilensky notes pg. 1]]
+[[Illustration Seibel notes pg. 2]]
+
+The reader must be able to do so for any representation of the symbol despite syntactically distinct strings:
+x, X, and cl-user:x all denote the same symbol (assuming that COMMON-LISP-USER is the current package).
+
+The process of locating a symbol within a package is known as interning (see 256). Seibel (264) states that when the
+reader reads a name it converts unescaped letters to uppercase and passes the resulting string to the function INTERN.
+INTERN then determines whether the symbol already exists or must be created. The next time that READ encounters that
+same name, it will use the same symbol in the form that it builds.
+
+The programmer can also look for a symbol in a given package by using the function FIND-SYMBOL. This allows the
+programmer to observe the process of interning directly:
+(find-symbol "SQXXQ") => NIL, NIL
+(intern "SQXXQ") => SQXXQ, NIL
+(find-symbol "SQXXQ") => SQXXQ, :INTERNAL
+
+FIND-SYMBOL
+FIND-ALL-SYMBOLS
+
+CLHS (2.3.4) says:
+When parsing the syntax for a symbol, the Lisp reader looks up the name of that symbol in the current package. This
+lookup may involve looking in other packages whose external symbols are inherited by the current package. If the name is
+found, the corresponding symbol is returned. If the name is not found (that is, there is no symbol of that name
+accessible in the current package), a new symbol is created and is placed in the current package as an internal symbol.
+The current package becomes the owner (home package) of the symbol, and the symbol becomes interned in the current
+package. If the name is later read again while this same package is current, the same symbol will be found and returned.
+
+See CLHS 2.3.5 regarding rules concerning package markers.
+and 2.3.6 concerning Package System Consistency Rules
+
+As described above, the reader will automatically create symbols as it reads their names. However, it is possible to
+actively create symbols too:
+
+MAKE-SYMBOL
+
+Each invocation of MAKE-SYMBOL will produce a new uninterned symbol with the given name:
+(eq (make-symbol "S") (make-symbol "S")) => NIL
+(eq 's (make-symbol "S")) => NIL
+(string= (symbol-name (make-symbol "S")) (symbol-name (make-symbol "S"))) => T
+(symbol-package (make-symbol "FOO")) => NIL
+
+The Lisp printer will display such uninterned symbols using the #: notation. In fact, a symbol may be interned in
+multiple packages simultaneously. The first package in which a symbol is interned is known as its home package. This is
+the package returned by the function SYMBOL-PACKAGE. If a symbol has been uninterned from its home package it may yet
+be interned in some other package, but it is said to be apparently uninterned. And this is what the printer checks in
+order to decide whether to use the #: syntax. All uninterned symbols--whether actually or apparently so--will have NIL
+for their home package.
+
+Reading an interned symbol results in the same object each time:
+(eq 'a 'a) => T
+
+But an uninterned symbol is created each time the reader sees the #: notation despite having the same print name:
+(eq '#:a '#:a) => NIL
+
+However, an uninterned symbol is still a symbol and can be used in the same way as any other. It's just a little slippery to hold
+onto:
+(defvar #:a 8)
+(symbol-value (second +)) => 8
+
+(defun #:f (x) (+ x 9))
+(defvar *f* *)
+(funcall *f* 2) => 11
+
+Common Lisp provides a different function to make a copy of a given symbol:
+
+COPY-SYMBOL copy-properties (Slade pg. 604)
+
+In some cases we wish to create symbols that are guaranteed to be unique while not really caring what their names are.
+The most common use is in macro definitions where we must be careful to avoid variable capture. The function
+GENSYM is used for this purpose (see 254).
+
+GENTEMP is a related function:
+
+GENTEMP
+
+In addition to creating symbols as needed, it is also possible to remove a symbol from a package. The function UNINTERN
+removes a symbol:
+
+UNINTERN
+
+If the reader later reads the same name it will create a new symbol that is different from the original. The same thing
+happens if the function INTERN is applied to a string that is the name of the old symbol. References to the old symbol
+may still remain, so it is easy to imagine a scenario in which multiple distinct symbols sharing the same name exist.
+
+Since INTERN takes a string rather than a symbol as an argument it isn't possible to re-intern the original symbol that
+way. And the function SYMBOL-PACKAGE can't be used to assign a value via SETF. However, the function IMPORT (see below)
+will restore the old symbol to the package:
+(defvar *x* 'cvqtwb)
+(unintern 'cvqtwb)
+(import *x*)
+(eq *x* 'cvqtwb) => T
+
+A Common Lisp system will define three standard packages: COMMON-LISP, COMMON-LISP-USER, and KEYWORD. The COMMON-LISP
+package has the nickname CL and contains the symbols used to name the operators and variables that define the language.
+CLHS (1.9) states that there are 978 external symbols in the COMMON-LISP package. Section 11.1.2.1 points out that these
+symbols are all present in the COMMON-LISP package, but it's not necessarily their home package.
+
+Seibel (267) points out that it's not legal to intern new symbols into the COMMON-LISP package. This is the reason for
+the existence of the second standard package, COMMON-LISP-USER, whose nickname is CL-USER. This package is a work area
+for user programs. It uses the COMMON-LISP package, so that all of the external symbols that define the language are
+accessible. But new names that the reader encounters are interned as symbols in CL-USER.
+
+For example, after entering the following S-expression at the REPL:
+(let ((z t))
+  (when z
+    (print 'foo)))
+
+The reader recognizes LET, T, WHEN, and PRINT as symbols in the COMMON-LISP package. The symbols Z and FOO belong to
+CL-USER on the other hand. And the two instances of the symbol Z both designate the same symbol of course.
+
+The third standard package is the KEYWORD package. CLHS 11.1.2 states that this package has no nickname, but Allegro
+designates the empty string "" as a nickname for it. This is a useful conceit in any case. It allows us to view a
+keyword as simply belonging to some "invisible" package, e.g., :a. CLHS 2.3.5 discusses the actual special treatment
+that the reader provides in order to handle keywords. In short, keywords are automatically interned in the KEYWORD
+package. They are also automatically exported for use in other packages and defined as constant variables with
+themselves as values (11.1.2.3.1 Interning a Symbol in the KEYWORD Package).
+
+(eq ':a :a)
+(symbol-name :a)  Name doesn't contain :
+(print :a) (Readable)
+
+A given Lisp implementation will surely also define other non-standard packages. In particular, the symbol which names
+the function used to exit the REPL--typically QUIT (or EXIT)--does not belong to the COMMON-LISP package. The symbol
+is not part of the language standard. It must, therefore, exist (as an inherited external symbol) in some other
+implementation-dependent package:
+SB-EXT  SBCL
+CCL     Clozure
+EXT     CLISP
+EXCL    Allegro (EXIT)
+
+It is possible to run into name conflicts with other symbols such as this which are not part of standard Common Lisp.
+
+The subsections of CLHS section 11.1.1.2 introduce the concepts and terms related to the visibility of symbols from
+within packages:
+
+11.1.1.2.1 Internal and External Symbols
+
+ mappings in a package divided into two classes: external and internal (external symbols and internal symbols).
+ Within a package, a name refers to one symbol or to none;
+ if it does refer to a symbol, then it is either external or internal in that package, but not both.
+
+ External symbols are part of the package's public interface to other packages.
+ Symbols become external symbols of a given package if they have been exported from that package.
+
+EXPORT
+
+A symbol has the same name no matter what package it is present in, but it might be an external symbol of some packages and an internal symbol of others.
+
+11.1.1.2.2 Package Inheritance
+
+Packages can be built up in layers.
+ package is a single collection of mappings from strings into internal symbols and external symbols.
+ However, some of these mappings might be established within the package itself,
+ while other mappings are INHERITED from other packages via use-package.
+ 
+A symbol is said to be PRESENT in a package if the mapping is in the package itself and is not inherited from somewhere else.
+
+ no way to inherit the internal symbols of another package;
+ to refer to an internal symbol using the Lisp reader:
+ - package containing the symbol must be made to be the current package
+ - package prefix must be used
+ - symbol must be imported into the current package.
+
+.............USE-PACKAGE, INTERN entries: inherited => internal
+
+11.1.1.2.3 Accessibility of Symbols in a Package
+
+ symbol accessible in a package if:
+ -that is its home package when it is created
+ -it is imported into that package
+ -inheritance via use-package.
+
+ Seibel 265 "Accessible" => FIND-SYMBOL finds it.
+
+If a symbol is accessible in a package => referred without a package prefix when that package is the current package, regardless of whether it is present or inherited.
+
+Symbols from one package can be made accessible in another package in two ways.
+
+-- Any individual symbol can be added to a package by use of import.
+
+IMPORT (As mentioned above IMPORT is also the only means by which to re-intern a given symbol that has been uninterned.)
+
+After the call to import the symbol is present in the importing package.
+The status of the symbol in the package it came from (if any) is unchanged, and the home package for this symbol is unchanged.
+Once imported, a symbol is present in the importing package and can be removed only by calling unintern.
+
+ Seibel 265 symbol can be present in multiple packages (due to IMPORT)
+
+
+-- The second mechanism for making symbols from one package accessible in another is provided by use-package.
+All of the external symbols of the used package are inherited by the using package.
+
+USE-PACKAGE
+PACKAGE-USE-LIST
+PACKAGE-USED-BY-LIST
+
+[[CLHS notes illustration]]
+
+[[Venn diagram]]
+
+SHADOW
+SHADOWING-IMPORT (Slade pg. 600) (11.1.1.2.3) A symbol is shadowed[3] by another symbol in some package if the first symbol would be accessible by inheritance if not for the presence of the second symbol. See shadowing-import.
+PACKAGE-SHADOWING-SYMBOLS
+
+UNEXPORT
+UNUSE-PACKAGE
+
+CLHS: Colon is "package marker" (in standard readtable)
+    
+:FOO
+FOO
+PUNG:FOO Error if PUNG neg exports FOO or neg contains FOO (Seibel 264)
+PUNG::FOO Caution. Not intended for use. If you use it, then you have a difference of opinion with the author of the library. You may be right, but make sure you think about it.
+
+11.1.1.2.4 Locating a Symbol in a Package
+
+--  external symbols and internal symbols of the package are searched
+--  external symbols of the used packages are searched in some unspecified order.
+(The order does not matter; see the rules for handling name conflicts listed below.)
+
+11.1.1.2.5 Prevention of Name Conflicts in Packages
+
+Within one package, any particular name can refer to at most one symbol. (FIND-SYMBOL returns 1 or nothing.)
+
+A name conflict is said to occur when there would be more than one candidate symbol.
+
+Any time a name conflict is about to occur => correctable error 
+
+The following rules apply to name conflicts:
+
+-- Name conflicts are detected when they become possible => when package structure is altered.
+Name conflicts not checked during every name lookup.
+
+-- If the SAME SYMBOL is accessible to a package through more than one path, there is no name conflict.
+A SYMBOL CANNOT CONFLICT WITH ITSELF.
+Name conflicts occur only between DISTINCT symbols with the same name (under string=).
+
+-- Every package has a list of shadowing symbols.
+ shadowing symbol takes precedence over any other symbol of the same name that would otherwise be accessible in the package.
+ A name conflict involving a shadowing symbol is always resolved in favor of the shadowing symbol, without signaling an error (except for one exception involving import). See shadow and shadowing-import.
+
+--  USE-PACKAGE, IMPORT, and EXPORT check for name conflicts.
+
+-- SHADOW and SHADOWING-IMPORT never signal a name-conflict error.
+
+-- UNUSE-PACKAGE and UNEXPORT do not need to do any name-conflict checking.
+UNINTERN does name-conflict checking only when a symbol being uninterned is a shadowing symbol.
+
+-- Giving a shadowing symbol to UNINTERN can uncover a name conflict that had previously been resolved by the shadowing.
+
+-- Package functions signal name-conflict errors of type PACKAGE-ERROR before making any change to the package structure.
+When multiple changes are to be made, it is permissible for the implementation to process each change separately.
+For example, when EXPORT is given a list of symbols, aborting from a name conflict caused by the second symbol in the list might still export the first symbol in the list.
+However, a name-conflict error caused by EXPORT of a single symbol will be signaled before that symbol's accessibility in any package is changed.
+
+-- Continuing from a name-conflict error must offer the user a chance to resolve the name conflict in favor of either of the candidates.
+The package structure should be altered to reflect the resolution of the name conflict, via SHADOWING-IMPORT, UNINTERN, or UNEXPORT.
+
+-- A name conflict in USE-PACKAGE between a symbol PRESENT in the using package and an EXTERNAL symbol of the used package is resolved:
+   in favor of the first symbol by making it a shadowing symbol, (Seibel 265 2 pkgs w/ EXTERNAL symbol of same name) 
+   or in favor of the second symbol by uninterning the first symbol from the using package.
+
+-- A name conflict in EXPORT or UNINTERN due to a package's inheriting TWO DISTINCT SYMBOLS with the same name (under string=) from two other packages
+can be resolved in favor of either symbol by importing it into the using package and making it a shadowing symbol, just as with use-package.
+
+The programmer can create new packages via MAKE-PACKAGE
+
+MAKE-PACKAGE
+
+Many package functions will accept as an argument a reference to a package known as a package designator. A package
+designator is either a package object or a string designator. A string designator is either a string, a single
+character, or a symbol. Obviously when calling MAKE-PACKAGE, the first argument must be a string designator since
+the package itself does not yet exist.
+
+[Seibel pg. 5 notes]
+
+The name of a package is in fact a string, which is the return value of PACKAGE-NAME. However, any string designator
+will serve to denote a package. Of course, a character can only be used to name a package whose name consists of a
+single-character string. This is not very useful. Consequently the choice of what to use to designate a package comes
+down to strings and symbols. Strings can be awkward to use since they must be expressed literally, particularly in terms
+of case. The packages named "Pung" and "PUNG" are distinct.
+
+Using a symbol to denote a package name allows the programmer to ignore the case of the name as all unescaped letters
+are automatically converted to uppercase, which is the normal usage. However, a symbol used as a package name belongs
+to a package as does any other interned symbol--most likely the current package. Thus, the process of naming a new
+package can pollute an existing package:
+(make-package "TULP")
+(in-package "TULP")
+'cl-user => CL-USER
+(describe 'cl-user)
+
+CL-USER is the symbol CL-USER, lies in #<PACKAGE TULP>, is accessible in 1 package TULP.
+
+ #<PACKAGE TULP> is the package named TULP.
+ It imports the external symbols of 1 package COMMON-LISP and exports no symbols, but no package uses these exports.
+
+(cl:make-package "DWEG")
+(cl:in-package "DWEG")
+(cl:in-package tulp::cl-user)
+
+To avoid this, some programmers prefer to use keywords as package designators. New symbols may be created in the
+KEYWORD package, but they merely consume a small bit of memory. On the other hand, some programmers go to the
+extreme of using uninterned symbols as package designators:
+(make-package #:foo)
+But this seems like more trouble than it's worth.
+
+PACKAGEP
+PACKAGE-NAME/FIND-PACKAGE  (package-name (find-package 'cl-user))
+PACKAGE-NICKNAMES
+
+IN-PACKAGE vs. (setf *package* ...) Seibel 269 Footnote 9
+RENAME-PACKAGE
+DELETE-PACKAGE
+
+While every step of creating a package and arranging for it to access the required symbols can be handled manually by
+using the functions above, Common Lisp also provides a more convenient way to take care of all the steps at once:
+
+DEFPACKAGE
+
+    Email library example
+-Importing individual names
+-Excluding individual names
+-Use 2 pkgs that export same name:
+ -Shadow both
+ -Import from one, shadow the other :SHADOWING-IMPORT-FROM
+

@@ -1,0 +1,275 @@
+Missing references 29 (A-25) , 31 (A-32)
+
+floor 10
+mod 10
+rem 10
+truncate 10
+gcd 12
+lcm 12
+min 12
+max 12
+defvar 15
+defparameter 15
+documentation 15
+setf 17
+load 18
+numberp 19
+realp 19
+rationalp 19
+integerp 19
+floatp 19
+zerop 19
+plusp 19
+minusp 19
+oddp 19
+evenp 19
+numerator 20
+denominator 20
+= /= > >= < <= 21
+type-of 21 ; Inadequate...
+float 22, 29
+coerce 22, 29, 59?, 141, 867
+complex 22
+rational 22
+rationalize 22
+floor 23
+ceiling 23
+truncate 23
+round 23
+ffloor 23
+fceiling 23
+ftruncate 23
+fround 23
+if 25
+cond 25
+signum 25
+and 26
+or 26
+not 26
+decode-float 30
+scale-float 30
+float-radix 30
+float-sign 30
+float-digits 31
+float-precision 31
+integer-decode-float 31
+complex 33
+complexp 33
+realpart 34
+imagpart 34
+sqrt 34
+isqrt 34
+conjugate 35
+abs 35
+exp 35
+expt 35
+log 35
+pi 35
+sin 35
+cos 35
+tan 35
+cis 36
+asin 36
+acos 36
+atan 36
+phase 37
+sinh 38
+cosh 38
+tanh 38
+asinh 38
+acosh 38
+atanh 38
+;Ch. 3
+car 41
+cdr 41
+cons 41
+quote 41
+first 41
+rest 41
+identity 42
+endp 45
+symbolp 45
+numberp 45
+consp 45
+atom 45
+listp 45
+null 45
+eq 46
+eql 46
+equal 46
+equalp 46
+tree-equal 46
+string=, string<, string-equal, string-lessp, ... 47
+char=, char<, char-equal, char-lessp, ... 47
+tailp 48
+nth 50
+elt 50
+first 50
+second 50
+third 50
+fourth 50
+nthcdr 51
+rest 51
+ldiff 51
+last 52
+butlast 53
+nbutlast 53
+list 54
+list* 54
+append 55
+revappend 56
+nreconc 56
+make-list 57
+copy-list 57
+length 58
+reverse 58
+nreverse 58
+function 58
+symbol-function 59
+funcall 59
+some 62
+every 62
+notany 63
+notevery 63
+member 64
+remove 64
+delete 64
+remove-if 64
+mapcar 65
+subst 65
+nsubst 65
+push 65
+pop 65
+lambda-list-keywords 68
+:allow-other-keys 71
+&allow-other-keys 71
+lambda-parameters-limit 73
+call-arguments-limit 73
+keywordp 73
+assoc 74
+pairlis 76
+acons 76
+copy-alist 77
+rassoc 77
+sublis 78
+nsublis 78
+setf 79
+getf 84
+get-properties 84
+remf 85
+symbol-plist 85
+get 86
+remprop 87
+adjoin 88
+pushnew 88
+intersection 89
+nintersection 89
+union 89
+nunion 89
+subsetp 89
+set-exclusive-or 89
+nset-exclusive-or 89
+set-difference 89
+nset-difference 89
+mapcan 90
+mapc 90
+maplist 90
+mapcon 90
+mapl 90
+map 92
+trace 95
+untrace 95
+defconstant 101
+constantp 101
+(makunbound 102)
+let 103
+rplaca 107
+rplacd 107
+incf 110
+decf 110
+rotatef 110
+shiftf 110
+list-length 116
+copy-tree 117
+defsetf 123
+get-setf-expansion 124
+define-setf-expander 125
+fdefinition 126
+setq 126
+set 127
+psetf 128
+psetq 128
+define-modify-macro 129
+make-string 132
+characterp 132
+stringp 132
+alpha-char-p 132
+digit-char-p 132
+digit-char 132
+alphanumericp 133
+upper-case-p 133
+lower-case-p 133
+both-case-p 133
+graphic-char-p 133
+standard-char-p 133
+char=, char/=, char<, char>, char<=, char>= 134
+char-equal, char-not-equal, char-lessp, char-greaterp, char-not-greaterp, char-not-lessp 134
+string=, string/=, string<, string>, string<=, string>= 135
+string-equal, string-not-equal, string-lessp, string-greaterp, string-not-greaterp, string-not-lessp 135
+char-downcase, char-upcase 136
+char-code, code-char 136
+character 136
+char 137
+concatenate 137
+subseq 138
+position 139
+find 139
+string-upcase, string-downcase, string-capitalize 140
+nstring-upcase, nstring-downcase, nstring-capitalize 140
+intern 141
+read-from-string 141
+copy-seq 144
+fill 144
+make-sequence 145
+replace 145
+substitute 146
+nsubstitute 146
+remove-duplicates 146
+delete-duplicates 146
+count 147
+mismatch 147
+search 148
+sort 148
+merge 150
+reduce 151
+char-code-limit 155
+char-int 155
+char-name 155
+name-char,string-trim,string-left-trim,string-right-trim 156
+
+
+
+read-sequence 219
+prog1, prog2 298
+progn 299
+
+
+deftype 378
+
+
+fboundp 579
+
+
+symbol-value 612
+
+eval 698
+
+defconstant 751
+constantly
+complement 859
+nconc
+with-standard-io-syntax 871
+
+
+formatter ???? 178
+

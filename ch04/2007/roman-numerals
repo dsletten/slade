@@ -1,0 +1,139 @@
+;#!/usr/local/bin/clisp
+
+;;
+;   NAME:               roman-numerals
+;
+;   STARTED:            010922
+;   MODIFICATIONS:
+;
+;   PURPOSE:
+;
+;   NOTES:
+;       Derived from exercise in Slade chapter 4.
+;       MMCD vs. MCMD? --> 2400
+;;
+
+(defconstant roman-numerals '((i 1)
+			      (v 5)
+			      (x 10)
+			      (l 50)
+			      (c 100)
+			      (d 500)
+			      (m 1000)))
+
+(defun numeral-to-decimal (numeral)
+  (second (assoc numeral roman-numerals)) )
+
+(defun roman-to-decimal (roman-num)
+  (let ((num-list (mapcar #'intern (map 'list
+					#'string
+					(string-upcase roman-num)))) )
+    (cond ((roman-filter num-list) nil)
+	  (t (translate num-list)))) )
+
+(defun translate (num-list)
+  (cond ((null num-list) 0)
+	((and (rest num-list)
+	      (< (numeral-to-decimal (first num-list))
+		 (numeral-to-decimal (second num-list))))
+	 (- (translate (rest num-list))
+	    (numeral-to-decimal (first num-list))))
+	(t (+ (translate (rest num-list))
+	      (numeral-to-decimal (first num-list)))) ) )
+
+(defun roman-filter (num-list)
+  (cond ((or (not (symbol-test num-list))
+	     (adjacent-scale-error num-list)
+	     (position-error num-list)
+	     (sequence-error num-list))
+;	 (format t "~&Malformed roman numeral.~%")
+	 t)
+	(t nil)) )
+
+(defun symbol-test (l)
+  "Verify that all symbols in the list are valid roman numerals."
+  (cond ((null l) t)
+	((assoc (car l) roman-numerals) (symbol-test (cdr l)))
+	(t nil)) )
+
+(defun adjacent-scale-error (num-list)
+  (cond ((null (rest num-list)) nil)
+	((< (* 10 (numeral-to-decimal (first num-list)))
+	    (numeral-to-decimal (second num-list))) t)
+	(t (adjacent-scale-error (rest num-list)))) )
+
+;;;
+;;;    Only one smaller value may appear to left of larger value.
+;;;    If a value is found that is less than or equal to the value on its
+;;;    right, then the auxiliary function is triggered. It continues to examine
+;;;    the list. If it ever finds a larger value later in the list, then the
+;;;    number is malformed.
+;;;    Examples:
+;;;        XIIX -> bad
+;;;        XIII -> ok
+;;;        IXL  -> bad
+;;;
+;;;        How about IXX??????  IXV????
+;;;        
+;;;    Note: There is some inefficiency in the second example as the first pair
+;;;    of I's trigger the aux function and later the second pair trigger it
+;;;    again.
+;;;    
+(defun sequence-error (num-list)
+  (labels ((sequence-error-aux (num-list)
+	     (cond ((null (rest num-list)) nil)
+		   ((< (numeral-to-decimal (first num-list))
+		       (numeral-to-decimal (second num-list)))
+		    t)
+		   ((= (numeral-to-decimal (first num-list))
+		       (numeral-to-decimal (second num-list)))
+		    (sequence-error-aux (rest num-list)))
+		   (t nil))))
+    (cond ((null (rest num-list)) nil)
+	  ((<= (numeral-to-decimal (first num-list))
+	       (numeral-to-decimal (second num-list)))
+	   (or (sequence-error-aux (rest num-list))
+	       (sequence-error (rest num-list))))
+	  (t (sequence-error (rest num-list)))) ) )
+
+
+;;;
+;;;    Only I, X, C may appear to the left of a larger number.
+;;;    
+(let ((ok-on-left '(i x c)))
+  (defun position-error (num-list)
+    (cond ((null (rest num-list)) nil)
+	  ((and (not (member (first num-list) ok-on-left))
+		(< (numeral-to-decimal (first num-list))
+		   (numeral-to-decimal (second num-list)))) )) ) )
+
+;;;
+;;;    CGI code begins.
+;;;    
+;(load "cgi")
+
+(defun display-page ()
+  (let ((roman (param (get-form-data) "roman")))
+    (html
+     (head
+      (title "Roman Numerals in Lisp"))
+     (body '(:onload "document.pung.roman.focus();")
+      (div '(:align "center")
+	   (cond ((string/= roman "") (show-roman roman)))
+	   (form '(:name "pung")
+		 (input '(:type "text" :name "roman"))
+		 (br)
+		 (br)
+		 (input '(:type "submit" :value "Convert")))) ))) )
+
+(defun show-roman (roman-string)
+  (let* ((roman-number (string-upcase (join (split roman-string) "")))
+	 (decimal (roman-to-decimal roman-number)))
+    (p
+     (cond (decimal
+	    (format nil "The Roman numeral ~A represents the number ~D"
+		    roman-number
+		    (strong decimal)))
+	   (t (format nil "~&Malformed roman numeral ~A.~%" (strong roman-number)))) )) )
+
+;(format t "~&Content-type: text/html~%~%~A" (display-page))

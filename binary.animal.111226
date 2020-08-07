@@ -1,0 +1,9 @@
+
+"animal" 
+T 
+("Does it purr?" ("Does it run on regular gas?" "Ferrari" "cat")
+ ("Is it gray?" "elephant"
+  ("Is it bigger than a person?"
+   ("Does it have stripes?" "tiger"
+    ("Is it a domestic animal?" "horse" "gorilla"))
+   "monkey"))) 

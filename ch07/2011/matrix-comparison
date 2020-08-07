@@ -1,0 +1,70 @@
+Sun Oct 16 20:23:56 EDT 2011
+
+Compare various matrix functions from solutions to Slade's ch. 7 exercises (chiefly MULTI-COLUMN-PRINT)
+
+2011
+ch07.lisp
+-multi-column-print
+ -list-to-columns
+ -multi-column-print-aux
+  -get-firsts
+  -get-rests
+
+2010
+ch07.lisp
+(-transpose, sublists, collect-elts)
+
+-multi-column-print
+ -make-table <-- Correct. Uses vector not list.
+
+2004
+ch07.lisp
+-split-list <-- Does not split properly
+ -split-list-aux
+ 
+-transpose
+ -strip
+ 
+-transpose-aux
+
+-multi-column-print
+ -split-list
+ -transpose
+
+2001
+ch07.lisp
+-multi-column-print
+ -split-list
+ -print-rows
+
+-print-rows
+ -print-cols
+
+-print-cols
+
+-split-list
+ -make-matrix-1
+ -transpose
+
+-make-matrix <-- These are correct (-1, -2 too)
+ -make-matrix-aux
+
+-make-matrix-1
+ -make-matrix-aux
+
+-make-matrix-2
+ -make-matrix-aux
+
+-transpose
+ -get-column
+ -remove-column
+
+matrix.lisp
+-make-matrix <-- These don't split properly
+-make-matrix-2
+-make-matrix-2a
+-make-matrix-3
+-make-matrix-4
+-make-matrix-3a
+
+(-transpose, get-column, make-columns, remove-column, ...)

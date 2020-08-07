@@ -1,0 +1,44 @@
+#!/usr/local/bin/clisp
+
+;;
+;   NAME:               zeller
+;
+;   STARTED:            010719
+;   MODIFICATIONS:
+;
+;   PURPOSE: Determine day of week given command-line args DAY MONTH YEAR
+;      (All numeric). Uses King's Zeller algorithm.
+;
+;   CALLING SEQUENCE:
+;   E.g., 16 July 1999
+;   zeller 16 7 1999
+;
+;   NOTES:
+;
+;;
+(defconstant days-of-week '("Saturday" "Sunday" "Monday" "Tuesday" 
+			    "Wednesday" "Thursday" "Friday" "Saturday"))
+
+(defun zeller (month day year)
+  (let* ((q day)
+	 (m (+ month (* 12 (+ (- 1 (truncate month 3))
+			      (truncate month 6)
+			      (truncate month 9)))) )
+	 (K (mod (- year (truncate m 13)) 100))
+	 (J (truncate (- year (truncate m 13)) 100))
+	 (h (mod (+ q
+		    (truncate (* 26 (+ m 1)) 10)
+		    K
+		    (truncate K 4)
+		    (truncate J 4)
+		    (* 5 J))
+		 7)))
+    (setf h (+ h (* 7 (truncate (- 6 h) 6))))
+    (format t "~A~%" (nth h days-of-week))) )
+
+(zeller (read-from-string (second *args*))
+	(read-from-string (first *args*))
+	(read-from-string (third *args*)))
+
+
+

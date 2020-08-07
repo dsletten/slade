@@ -1,0 +1,113 @@
+;#!/usr/local/bin/clisp
+
+;;
+;   NAME:               ch3.lisp
+;
+;   STARTED:            010414
+;   MODIFICATIONS:
+;
+;   PURPOSE:
+;
+;
+;
+;   CALLING SEQUENCE:
+;
+;
+;   INPUTS:
+;
+;   OUTPUTS:
+;
+;   EXAMPLE:
+;
+;   NOTES:
+;
+;;
+;;;
+;;;    3.14.4
+;;;
+(defun no-zeros (l)
+  "Remove all zeros from a given list."
+  (remove 0 l) )
+
+
+(defun collect-numbers (el l)
+  "Add a number to the front of a list."
+  (if (numberp el)
+      (cons el l)
+      l) )
+
+
+(defvar verb-list '(is am are have has go went gone))
+
+(defun verb-find-lame (sentence)
+  (intersection sentence verb-list) )
+
+(defun verb-find (sentence)
+  (cond ((null sentence) nil)
+	((member (car sentence) verb-list) (cons (car sentence) (verb-find (cdr sentence))))
+	(t (verb-find (cdr sentence)))) )
+  
+;;;
+;;;    3.14.5
+;;;
+(defun proper-listp (l)
+  "Predicate determines whether or not its argument is a proper list."
+  (cond ((atom l) nil)   ;((not (listp l)) l) would be better here.
+	(t (null (cdr (last l))))) )
+
+;;;
+;;;    3.14.6
+;;;
+(defun last-atom (l)
+  (cond ((not (listp l)) nil)
+	((proper-listp l) (cond ((atom (car (last l))) (car (last l)))
+				(t (last-atom (car (last l))))))
+				
+	(t (cdr (last l)))) )
+
+;;;
+;;;    3.14.7
+;;;
+(defun my-pairlis (l1 l2)
+  (mapcar #'cons l1 l2) )
+
+;;;
+;;;    3.14.8
+;;;
+(defun make-person (name age weight sex children)
+  (reverse (pairlis '(name age weight sex children)
+		     (list name age weight sex children))) )
+
+(defun get-name (person)
+  (cdr (assoc 'name person)) )
+
+(defun get-age (person)
+  (cdr (assoc 'age person)) )
+
+(defun get-weight (person)
+  (cdr (assoc 'weight person)) )
+
+(defun get-sex (person)
+  (cdr (assoc 'sex person)) )
+
+(defun get-children (person)
+  (cdr (assoc 'children person)) )
+
+;;;
+;;;    3.14.9
+;;;
+(defun make-person2 (name age weight sex children)
+  (setf (symbol-plist name) (list 'age age 'weight weight 'sex sex 'children children)) )
+
+(defun get-age2 (person)
+  (get person 'age) )
+
+(defun get-weight2 (person)
+  (get person 'weight) )
+
+(defun get-sex2 (person)
+  (get person 'sex) )
+
+(defun get-children2 (person)
+  (get person 'children) )
+

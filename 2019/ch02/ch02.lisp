@@ -26,7 +26,7 @@
 ;;;;   Notes:
 ;;;;
 ;;;;
-(load "/Users/dsletten/lisp/packages/test.lisp")
+(load "/home/slytobias/lisp/packages/test.lisp")
 
 (defpackage :ch02 (:use :common-lisp :test) (:shadow :signum :floor :ceiling))
 
@@ -186,10 +186,16 @@
 ;;;
 ;;;    2.11.7
 ;;;
+;; (defun go-to-movie-p (age cash)
+;;   (cond ((< age 12) (> cash 3.0))
+;;         ((and (>= age 12) (< age 65)) (> cash 7.0))
+;;         ((>= age 65) (> cash 4.5))))
+
+;; This makes more sense.
 (defun go-to-movie-p (age cash)
-  (cond ((< age 12) (> cash 3.0))
-        ((and (>= age 12) (< age 65)) (> cash 7.0))
-        ((>= age 65) (> cash 4.5))))
+  (cond ((< age 12) (>= cash 3.0))
+        ((and (>= age 12) (< age 65)) (>= cash 7.0))
+        ((>= age 65) (>= cash 4.5))))
 
 (deftest test-go-to-movie-p ()
   (check

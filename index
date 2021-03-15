@@ -10,8 +10,8 @@ min 12
 max 12
 defvar 15
 defparameter 15
-documentation 15
-setf 17
+documentation 15, 364
+setf 17, 79
 load 18
 numberp 19
 realp 19
@@ -153,7 +153,6 @@ copy-alist 77
 rassoc 77
 sublis 78
 nsublis 78
-setf 79
 getf 84
 get-properties 84
 remf 85
@@ -226,7 +225,7 @@ position 139
 find 139
 string-upcase, string-downcase, string-capitalize 140
 nstring-upcase, nstring-downcase, nstring-capitalize 140
-intern 141
+intern 141 256
 read-from-string 141
 copy-seq 144
 fill 144
@@ -246,17 +245,40 @@ char-code-limit 155
 char-int 155
 char-name 155
 name-char,string-trim,string-left-trim,string-right-trim 156
-
-
+-if/-if-not functions (count,find,position,member,remove,delete,assoc,rassoc,(n)subst,(n)substitute 157
+stable-sort 159
+*standard-input*,*standard-output*,*terminal-io*,*query-io*,*debug-io*,*trace-output*,*error-output* 163
+streamp,input-stream-p,output-stream-p,interactive-stream-p,open-stream-p  _stream designator_ 164
+write,prin1,princ,print,pprint 165
+*print-array* 166
+*print-base*,*print-radix*,*print-case*,*print-escape* 167
+*print-circle* 168
+*print-escape*,*print-gensym* 169
+*print-length*,*print-level* 170
+*print-lines*,*print-miser-width*,*print-pprint-dispatch*,*print-pretty* 171
+*print-readably*,*print-right-margin* 172
+write-byte,write-char,write-string,write-line 173
+terpri,fresh-line,write-sequence 174
+write-to-string,prin1-to-string,princ-to-string 175
+with-output-to-string 176
+format 178
+formatter ???? 178
+pprint-linear,pprint-fill,pprint-tabular 207
 
 read-sequence 219
+y-or-n-p/yes-or-no-p 224
 prog1, prog2 298
 progn 299
 
+describe 359    describe-object????
+inspect,ed 360
 
 deftype 378
+break 388
 
+constantly 459, 872
 
+gethash,remhash,clrhash 552
 fboundp 579
 
 
@@ -265,11 +287,12 @@ symbol-value 612
 eval 698
 
 defconstant 751
-constantly
 complement 859
-nconc
+nconc 704
 with-standard-io-syntax 871
 
 
-formatter ???? 178
 
+dribble?
+function-lambda-expression??
+do-symbols

@@ -34,11 +34,13 @@
 ;;;;   Hashtable vs. tree
 ;;;;   Randomize (Don't always start w/ same question!)
 ;;;;
-(load "/Users/dsletten/lisp/packages/test.lisp")
+;(load "/Users/dsletten/lisp/packages/test.lisp")
+(load "/home/slytobias/lisp/packages/test.lisp")
 
 (defpackage :guess (:use :common-lisp :test))
 
-(load "/Users/dsletten/lisp/books/Slade/ch09/2011/game.lisp")
+;(load "/Users/dsletten/lisp/books/Slade/ch09/2011/game.lisp")
+(load "/home/slytobias/lisp/books/Slade/ch09/2011/game.lisp")
 
 (in-package :guess)
 

@@ -37,7 +37,7 @@
 ;;;    Tail recursion is natural way to write this! Consing from head makes it come out backwards anyway.
 ;;;    
 (defun reverse (l)
-  (labels ((reverse-aux (l result)
+  (labels ((reverse-aux (l result) ; This aux function is just REVAPPEND.
 	     (cond ((endp l) result)
 		   (t (reverse-aux (rest l) (cons (first l) result)))) ))
     (reverse-aux l '())))

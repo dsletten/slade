@@ -24,7 +24,8 @@
 ;;;;   Example:
 ;;;;
 ;;;;   Notes: A comparison of various solutions to Slade's exercise 4.7.15
-;;;;
+;;;;   See pensoj note 210405
+;;;;   See test-tree-map in test-lang.lisp!
 ;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -365,3 +366,37 @@
 (defun process (l tree)
   (tree-average-aux tree (first l) (second l)))
 
+;;;
+;;;    Repackaged...
+;;;    
+(defun tree-average (tree)
+  (labels ((tree-average-aux (tree sum count)
+             (cond ((null tree) (list sum count))
+                   ((atom tree) (check-type tree number)
+                    (list (+ tree sum) (1+ count)))
+                   (t (apply #'tree-average-aux (cdr tree) (tree-average-aux (car tree) sum count)))) ))
+    (apply #'/ (tree-average-aux tree 0 0))))
+
+;;;
+;;;    2021
+;;;
+(defun tree-average (tree)
+  (labels ((find-tree-average (tree sum count)
+             (cond ((null tree) (values sum count))
+                   ((atom tree) (check-type tree number)
+                    (values (+ tree sum) (1+ count)))
+                   (t (multiple-value-call #'find-tree-average (cdr tree) (find-tree-average (car tree) sum count)))) ))
+  (multiple-value-call #'/ (find-tree-average tree 0 0))))
+
+;;;
+;;;    This is basically the FLATTEN algorithm. Essentially we flatten the tree
+;;;    and traverse until we reach the end of the top-level CONS chain.
+;;;    
+(defun tree-average (tree)
+  (labels ((compute-tree-average (tree sum count)
+             (cond ((null tree) (/ sum count))
+                   ((null (car tree)) (compute-tree-average (cdr tree) sum count))
+                   ((atom (car tree)) (compute-tree-average (cdr tree) (+ sum (car tree)) (1+ count)))
+                   (t (destructuring-bind ((head . tail1) . tail2) tree
+                        (compute-tree-average (list* head tail1 tail2) sum count)))) ))
+    (compute-tree-average tree 0 0)))

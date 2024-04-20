@@ -131,7 +131,8 @@
 ;;;
 (defun last-atom (obj)
   (cond ((atom obj) obj)
-        ((atom (cdr obj)) (or (last-atom (cdr obj)) ; NIL pun
+        ;; ((atom (cdr obj)) (or (last-atom (cdr obj)) ; NIL pun
+        ((atom (cdr obj)) (or (cdr obj) ; NIL pun
                               (last-atom (car obj))))
         (t (last-atom (cdr obj)))) )
 

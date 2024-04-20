@@ -23,7 +23,7 @@
 ;;;;
 ;;;;   Example:
 ;;;;
-;;;;   Notes:
+;;;;   Notes: See Shapiro ch. 19
 ;;;;
 ;;;;
 (load "/home/slytobias/lisp/packages/test.lisp")

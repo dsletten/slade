@@ -23,7 +23,7 @@
 ;;;;
 ;;;;   Example:
 ;;;;
-;;;;   Notes:
+;;;;   Notes: All of these assume that the wild card token does not appear in the input/target.
 ;;;;
 ;;;;
 (load "/Users/dsletten/lisp/packages/test.lisp")
@@ -250,7 +250,7 @@
 ;;;
 ;;;   Note: 2a. and 2b. must be handled separately, otherwise
 ;;;         2a. will mistakenly fall through to 2c. and into an
-;;;         infinite loop.
+;;;         infinite loop. <--- The 2021 versions below solve this by tightening 2c. INPUT must be a CONS (not NULL). Then 2a. goes away.
 ;;;
 ;;;         Specifically, (matchp '(*wild* a) '()) must fail at 2a. not 2b.
 ;;;
@@ -329,3 +329,81 @@
 
 (defun wildp (s)
   (eq s '*wild*))
+
+;;;
+;;;    210409
+;;;    These two are very subtly different. Sort of a Lisp version of cut in Prolog.
+;;;    The first one has a COND test with 3 predicates. If any of these fail, then
+;;;    execution will resume with the next COND clause--sort of backtracking to a choice point.
+;;;    But the second version commits based on 2 predicates. The 3rd predicate is not part of
+;;;    the clause's test, so if it fails then the function is done...
+;;;    
+(defun matchp-prolog (pattern target)
+  (cond ((endp pattern) (endp target))
+        ((and (consp target) (eq (first pattern) (first target)) (matchp-prolog (rest pattern) (rest target))))
+        ((and (wildp (first pattern)) (matchp-prolog (rest pattern) target))) ; Covers case where TARGET is (). Don't care as long as wild card is available.
+        ((and (wildp (first pattern)) (consp target) (matchp-prolog pattern (rest target))))
+        (t nil)))
+
+(defun matchp-prolog (pattern target)
+  (cond ((endp pattern) (endp target))
+        ((and (consp target) (eq (first pattern) (first target)))
+         (matchp-prolog (rest pattern) (rest target)))
+        ((and (wildp (first pattern)) (matchp-prolog (rest pattern) target)))
+        ((and (wildp (first pattern)) (consp target) (matchp-prolog pattern (rest target))))
+        (t nil)))
+
+;;;
+;;;    Most like Prolog match2/2
+;;;    
+(defun matchp-prolog (pattern target)
+  (cond ((endp pattern) (endp target))
+        ((and (wildp (first pattern)) (matchp-prolog (rest pattern) target)))
+        ((and (wildp (first pattern)) (consp target) (matchp-prolog pattern (rest target))))
+        ((and (consp target) 
+              (eq (first pattern) (first target)) 
+              (matchp-prolog (rest pattern) (rest target))))
+        (t nil)))
+
+(defun matchp-prolog (pattern target)
+  (cond ((endp pattern) (endp target))
+        ((and (wildp (first pattern)) (matchp-prolog (rest pattern) target)))
+        ((endp target) nil)
+        ((and (wildp (first pattern)) (matchp-prolog pattern (rest target)))) ; Too much implicit here? I.e., TARGET is non-null.
+        ((and (eq (first pattern) (first target)) (matchp-prolog (rest pattern) (rest target))))
+;        ((eq (first pattern) (first target)) (matchp-prolog (rest pattern) (rest target))) ; Final clause unnecessary??
+        (t nil)))
+;;;
+;;;    Compromise - more natural Lisp
+;;;    
+(defun matchp-prolog (pattern target)
+  (cond ((endp pattern) (endp target))
+        ((wildp (first pattern))
+         (or (matchp-prolog (rest pattern) target)
+             (and (consp target) (matchp-prolog pattern (rest target)))) )
+        ((endp target) nil)
+        ((eq (first pattern) (first target)) 
+         (matchp-prolog (rest pattern) (rest target)))
+        (t nil)))
+
+;;;
+;;;    My favorite.
+;;;
+;;;    3 primary cases:
+;;;    1. PATTERN is empty. Match simply depends on whether or not TARGET is empty too.
+;;;    2. [PATTERN is not empty] - First element of PATTERN is a wild card.
+;;;       a. Wild card matches 0 elements. Check rest of PATTERN (TARGET may or may not be empty. Irrelevant here.)
+;;;       b. Wild card matches 1+ elements. (TARGET is not empty). Continue checking PATTERN against rest of TARGET.
+;;;    3. [PATTERN is not empty. First element is literal.] - TARGET must not be empty, and its first element must
+;;;       match the first element of PATTERN. Continue checking rest of each.
+;;;    4. No match otherwise.
+;;;    
+(defun matchp-prolog (pattern target)
+  (cond ((endp pattern) (endp target))
+        ((wildp (first pattern))
+         (or (matchp-prolog (rest pattern) target)
+             (and (consp target) (matchp-prolog pattern (rest target)))) )
+        ((consp target)
+         (and (eq (first pattern) (first target)) 
+              (matchp-prolog (rest pattern) (rest target))))
+        (t nil)))

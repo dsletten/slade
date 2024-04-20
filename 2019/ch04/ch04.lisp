@@ -26,7 +26,7 @@
 ;;;;   Notes:
 ;;;;
 ;;;;
-(load "/Users/dsletten/lisp/packages/test.lisp")
+(load "/home/slytobias/lisp/packages/test.lisp")
 
 (defpackage :ch04 (:use :common-lisp :test) (:shadow :reverse :append :nth :last :remove-duplicates))
 
@@ -327,6 +327,9 @@
 ;;;
 ;;;    4.7.13
 ;;;
+;;;    The problem statement specifically requires that the first arg, OBJ, is an atom.
+;;;    Deciding how to traverse the TREE becomes more complicated if a CONS were allowed.
+;;;    
 (defun count-occurrences (obj tree)
   (cond ((null tree) 0)
         ((atom tree) (if (eq obj tree) 1 0))
@@ -375,9 +378,26 @@
 (deftest test-tree-average ()
   (check
    (= (tree-average '(1 2 (3 (4 (5) 6) (7)) 8 (9))) 5)
+   (= (tree-average '((1 . 2) (3 (4 (5 . 6))) (7) 8 . 9)) 5)
    (= (tree-average '(((( ((1)) )))) ) 1)))
 
+(defun tree-average (tree)
+  (labels ((find-tree-average (tree sum count)
+             (cond ((null tree) (values sum count))
+                   ((atom tree) (check-type tree number)
+                    (values (+ tree sum) (1+ count)))
+                   (t (multiple-value-call #'find-tree-average (cdr tree) (find-tree-average (car tree) sum count)))) ))
+  (multiple-value-call #'/ (find-tree-average tree 0 0))))
 
-
-
-   
+;;;
+;;;    This is basically the FLATTEN algorithm. Essentially we flatten the tree
+;;;    and traverse until we reach the end of the top-level CONS chain.
+;;;    
+(defun tree-average (tree)
+  (labels ((compute-tree-average (tree sum count)
+             (cond ((null tree) (/ sum count))
+                   ((null (car tree)) (compute-tree-average (cdr tree) sum count))
+                   ((atom (car tree)) (compute-tree-average (cdr tree) (+ sum (car tree)) (1+ count)))
+                   (t (destructuring-bind ((head . tail1) . tail2) tree
+                        (compute-tree-average (list* head tail1 tail2) sum count)))) ))
+    (compute-tree-average tree 0 0)))
